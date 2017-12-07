@@ -13,11 +13,12 @@ import java.awt.Desktop
 import java.io.IOException
 import java.lang.IllegalArgumentException
 import java.net.URI
+import java.util.*
 
 /**
  * @author Ianislav Nachev <qnislav.nachev@clouway.com>
  */
-class GoogleOAuthClient(private val client: String, private val secret: String, private val transport: HttpTransport) : OAuthClient {
+internal class GoogleOAuthHttpClient(private val client: String, private val secret: String, private val transport: HttpTransport) : OAuthHttpClient {
     private val TOKEN_SERVICE_URL = "https://www.googleapis.com/oauth2/v4/token"
     private val AUTHORIZATION_CODE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
     private val TOKEN_INFO_SERVICE_URL = "https://www.googleapis.com/oauth2/v1/tokeninfo"
@@ -45,10 +46,10 @@ class GoogleOAuthClient(private val client: String, private val secret: String, 
             throw AuthorizationCodeIsInvalidException("Cannot generate access token for auth code: " + authCode)
         }
 
-        return TokenResponse(response.accessToken, response.refreshToken)
+        return TokenResponse(response.accessToken, response.refreshToken, toExpirationDate(response.expiresInSeconds))
     }
 
-    override fun refreshToken(refreshToken: String): String {
+    override fun refreshToken(refreshToken: String): TokenResponse {
         val response: com.google.api.client.auth.oauth2.TokenResponse
         try {
             response = RefreshTokenRequest(transport, JSON_FACTORY, GenericUrl(TOKEN_SERVICE_URL), refreshToken)
@@ -58,7 +59,7 @@ class GoogleOAuthClient(private val client: String, private val secret: String, 
             throw RefreshTokenIsInvalidException("Cannot refresh the access token with: " + refreshToken)
         }
 
-        return response.accessToken
+        return TokenResponse(response.accessToken, refreshToken, toExpirationDate(response.expiresInSeconds))
     }
 
     override fun getTokenInfo(accessToken: String): Optional<TokenInfo> {
@@ -103,5 +104,11 @@ class GoogleOAuthClient(private val client: String, private val secret: String, 
         } catch (e: Exception) {
             throw IllegalArgumentException("Cannot open $url in browser.")
         }
+    }
+
+    private fun toExpirationDate(secondsToExpire: Long): Date {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.SECOND, secondsToExpire.toInt())
+        return calendar.time
     }
 }
