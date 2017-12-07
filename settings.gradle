@@ -1,0 +1,3 @@
+rootProject.name = 'oauth2-java-client'
+include 'oauth2-java-client-console'
+
