@@ -8,18 +8,19 @@ import org.jmock.integration.junit4.JUnitRuleMockery
 import org.junit.Assert.assertThat
 import org.junit.Test
 import java.io.ByteArrayInputStream
+import java.util.*
 
 
 /**
  * @author Ianislav Nachev <qnislav.nachev@clouway.com>
  */
-class ConsoleAppTokenSourceTest {
+class ConsoleAppCredentialsSourceTest {
 
     @JvmField
     val context = JUnitRuleMockery()
 
-    val credentialsStore = context.mock(CredentialsStore::class.java)
-    val oauthClient = context.mock(OAuthClient::class.java)
+    val credentialsStore = context.mock(CredentialsStorage::class.java)
+    val oauthClient = context.mock(OAuthHttpClient::class.java)
 
     val config = OAuthClientConfig
             .setClient("::client::")
@@ -28,64 +29,66 @@ class ConsoleAppTokenSourceTest {
             .setCredentialsStore(credentialsStore)
             .build()
 
-    private var tokenSource = ConsoleAppTokenSource(config, oauthClient)
+    private var credentialsSource = ConsoleAppCredentialsSource(config, oauthClient)
 
     @Test
     fun getTokenWhenUserHaveCredentialsInStore() {
+        val instantTime = today(5, 20, 30)
+        val tokenExpirationDate = today(5, 20, 40)
         context.checking(object : Expectations() { init {
             oneOf(credentialsStore).getCredentials()
-            will(returnValue(Optional.of(Credentials("access_token", "refresh_token"))))
-
-            oneOf(oauthClient).getTokenInfo("access_token")
-            will(returnValue(Optional.of(TokenInfo("issued_to", setOf("scope1", "scope2"), 646))))
+            will(returnValue(Optional.of(Credentials("access_token", "refresh_token", tokenExpirationDate))))
         }
         })
 
-        val token = tokenSource.getToken()
+        val credentials = credentialsSource.getCredentials(instantTime)
 
-        assertThat(token, `is`("access_token"))
+        assertThat(credentials, `is`(Credentials("access_token", "refresh_token", tokenExpirationDate)))
     }
 
     @Test
     fun refreshTheTokenFromCredentialsStore() {
+        val instantTime = today(5, 21, 30)
+        val tokenExpirationDate = today(5, 20, 30)
+        val newExpirationDate = today(6, 20, 30)
+
         context.checking(object : Expectations() { init {
             oneOf(credentialsStore).getCredentials()
-            will(returnValue(Optional.of(Credentials("access_token", "refresh_token"))))
-
-            oneOf(oauthClient).getTokenInfo("access_token")
-            will(returnValue(Optional.absent<TokenInfo>()))
+            will(returnValue(Optional.of(Credentials("access_token", "refresh_token", tokenExpirationDate))))
 
             oneOf(oauthClient).refreshToken("refresh_token")
-            will(returnValue("new_access_token"))
+            will(returnValue(TokenResponse("new_access_token", "refresh_token", newExpirationDate)))
 
-            oneOf(credentialsStore).saveCredentials(Credentials("new_access_token", "refresh_token"))
+            oneOf(credentialsStore).saveCredentials(Credentials("new_access_token", "refresh_token", newExpirationDate))
         }
         })
 
-        val token = tokenSource.getToken()
+        val credentials = credentialsSource.getCredentials(instantTime)
 
-        assertThat(token, `is`("new_access_token"))
+        assertThat(credentials.accessToken, `is`("new_access_token"))
     }
 
     @Test(expected = RefreshTokenIsInvalidException::class)
     fun cannotRefreshTheToken() {
+        val instantTime = today(5, 20, 30)
+        val tokenExpirationDate = today(5, 20, 20)
+
         context.checking(object : Expectations() { init {
             oneOf(credentialsStore).getCredentials()
-            will(returnValue(Optional.of(Credentials("access_token", "refresh_token"))))
-
-            oneOf(oauthClient).getTokenInfo("access_token")
-            will(returnValue(Optional.absent<TokenInfo>()))
+            will(returnValue(Optional.of(Credentials("access_token", "refresh_token", tokenExpirationDate))))
 
             oneOf(oauthClient).refreshToken("refresh_token")
             will(throwException(RefreshTokenIsInvalidException("invalid refresh")))
         }
         })
 
-        tokenSource.getToken()
+        credentialsSource.getCredentials(instantTime)
     }
 
     @Test
     fun triggerUserAuthorization() {
+        val instantTime = Date()
+
         val server = JettyServer(8089)
         val inputStream = ByteArrayInputStream("::authCode::".toByteArray())
         System.setIn(inputStream)
@@ -97,17 +100,17 @@ class ConsoleAppTokenSourceTest {
             oneOf(oauthClient).authorizeUser(server.callbackUri, mutableSetOf("scope1", "scope2"))
 
             oneOf(oauthClient).newTokenRequest("::authCode::", server.callbackUri)
-            will(returnValue(TokenResponse("::access_token::", "::refresh_token::")))
+            will(returnValue(TokenResponse("::access_token::", "::refresh_token::", instantTime)))
 
-            oneOf(credentialsStore).saveCredentials(Credentials("::access_token::", "::refresh_token::"))
+            oneOf(credentialsStore).saveCredentials(Credentials("::access_token::", "::refresh_token::", instantTime))
         }
         })
 
-        val token = tokenSource.getToken()
+        val credentials = credentialsSource.getCredentials(Date())
 
         System.setIn(System.`in`)
 
-        assertThat(token, `is`("::access_token::"))
+        assertThat(credentials, `is`(Credentials("::access_token::", "::refresh_token::", instantTime)))
     }
 
     @Test(expected = AuthorizationCodeIsInvalidException::class)
@@ -127,8 +130,16 @@ class ConsoleAppTokenSourceTest {
         }
         })
 
-        tokenSource.getToken()
+        credentialsSource.getCredentials(Date())
 
         System.setIn(System.`in`)
+    }
+
+
+    private fun today(hour: Int, minutes: Int, seconds: Int): Date {
+        val currentDate = Date()
+        val calendar = Calendar.getInstance()
+        calendar.set(currentDate.year, currentDate.month, currentDate.day, hour, minutes, seconds)
+        return calendar.time
     }
 }

@@ -3,17 +3,17 @@ package com.clouway.oauth2.client.core
 import com.google.common.base.Optional
 
 /**
- * OAuthClient config contains configuration for the credentials that will be created
+ * OAuthHttpClient config contains configuration for the credentials that will be created
  *
  * @author Ianislav Nachev <qnislav.nachev@clouway.com>
  */
-class OAuthClientConfig(val clientId: String, val secret: String, val scopes: Set<String>, val credentialsStore: CredentialsStore) {
+class OAuthClientConfig(val clientId: String, val secret: String, val scopes: Set<String>, val credentialsStorage: CredentialsStorage) {
 
     companion object Builder {
         private var clientId = ""
         private var secret = ""
         private var scopes = setOf<String>()
-        private var credentialsStore: CredentialsStore = DefaultCredentialsStore()
+        private var credentialsStorage: CredentialsStorage = DefaultCredentialsStorage()
 
         fun setClient(clientId: String): Builder {
             Builder.clientId = clientId
@@ -30,16 +30,16 @@ class OAuthClientConfig(val clientId: String, val secret: String, val scopes: Se
             return this
         }
 
-        fun setCredentialsStore(store: CredentialsStore): Builder {
-            credentialsStore = store
+        fun setCredentialsStore(storage: CredentialsStorage): Builder {
+            credentialsStorage = storage
             return this
         }
 
-        fun build(): OAuthClientConfig = OAuthClientConfig(clientId, secret, scopes, credentialsStore)
+        fun build(): OAuthClientConfig = OAuthClientConfig(clientId, secret, scopes, credentialsStorage)
     }
 }
 
-internal class DefaultCredentialsStore : CredentialsStore {
+internal class DefaultCredentialsStorage : CredentialsStorage {
     override fun saveCredentials(credentials: Credentials) {}
 
     override fun getCredentials(): Optional<Credentials> = Optional.absent()

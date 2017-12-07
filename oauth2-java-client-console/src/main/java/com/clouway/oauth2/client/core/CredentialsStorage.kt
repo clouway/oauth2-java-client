@@ -1,13 +1,14 @@
 package com.clouway.oauth2.client.core
 
 import com.google.common.base.Optional
+import java.util.*
 
 /**
  * Store user credentials
  *
  * @author Ianislav Nachev <qnislav.nachev@clouway.com>
  */
-interface CredentialsStore {
+interface CredentialsStorage {
 
     /**
      * Save user credentials
@@ -24,4 +25,8 @@ interface CredentialsStore {
     fun getCredentials(): Optional<Credentials>
 }
 
-data class Credentials(val accessToken: String, val refreshToken: String)
+data class Credentials(val accessToken: String, val refreshToken: String, val expirationDate: Date) {
+    fun areExpired(date: Date): Boolean {
+        return this.expirationDate.before(date)
+    }
+}

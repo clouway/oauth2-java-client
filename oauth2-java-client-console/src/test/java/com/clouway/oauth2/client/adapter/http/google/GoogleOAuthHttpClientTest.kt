@@ -1,6 +1,5 @@
 package com.clouway.oauth2.client.adapter.http.google
 
-import com.clouway.oauth2.client.adapter.http.google.GoogleOAuthClient
 import com.clouway.oauth2.client.core.AuthorizationCodeIsInvalidException
 import com.clouway.oauth2.client.core.RefreshTokenIsInvalidException
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -14,13 +13,13 @@ import org.junit.Test
 /**
  * @author Ianislav Nachev <qnislav.nachev@clouway.com>
  */
-class GoogleOAuthClientTest {
+class GoogleOAuthHttpClientTest {
 
-    private var oauthClient = GoogleOAuthClient("::client::", "::secret::", NetHttpTransport())
+    private var oauthClient = GoogleOAuthHttpClient("::client::", "::secret::", NetHttpTransport())
 
     @Before
     fun setUp() {
-        oauthClient = GoogleOAuthClient("::client::", "::secret::", NetHttpTransport())
+        oauthClient = GoogleOAuthHttpClient("::client::", "::secret::", NetHttpTransport())
     }
 
     @Test(expected = AuthorizationCodeIsInvalidException::class)
@@ -43,7 +42,7 @@ class GoogleOAuthClientTest {
                                 .setContent("{\"issued_to\":\"::clientId::\",\"expires_in\":\"1785\",\"scope\":\"scope1 scope2\"}"))
                 .build()
 
-        oauthClient = GoogleOAuthClient("::client::", "::secret::", transport)
+        oauthClient = GoogleOAuthHttpClient("::client::", "::secret::", transport)
 
         val tokenInfo = oauthClient.getTokenInfo("::access_token::")
 
@@ -60,7 +59,7 @@ class GoogleOAuthClientTest {
                         MockLowLevelHttpResponse()
                                 .setStatusCode(404)).build()
 
-        oauthClient = GoogleOAuthClient("::client::", "::secret::", transport)
+        oauthClient = GoogleOAuthHttpClient("::client::", "::secret::", transport)
 
         val tokenInfo = oauthClient.getTokenInfo("::access_token::")
 

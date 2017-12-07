@@ -1,13 +1,14 @@
 package com.clouway.oauth2.client.core
 
 import com.google.common.base.Optional
+import java.util.*
 
 /**
  * Authorization flow that provide OAuth authorization sequence
  *
  * @author Ianislav Nachev <qnislav.nachev@clouway.com>
  */
-interface OAuthClient {
+interface OAuthHttpClient {
 
     /**
      * Authorize user and redirect to given redirect url.
@@ -35,7 +36,7 @@ interface OAuthClient {
      * @return the new  access token
      */
     @Throws(RefreshTokenIsInvalidException::class)
-    fun refreshToken(refreshToken: String): String
+    fun refreshToken(refreshToken: String): TokenResponse
 
     /**
      * Find token info by given access token
@@ -48,4 +49,4 @@ interface OAuthClient {
 
 data class TokenInfo(val issuedTo: String, val scopes: Set<String>, val expireIn: Int)
 
-data class TokenResponse(val accessToken: String, val refreshToken: String)
+data class TokenResponse(val accessToken: String, val refreshToken: String, val expirationDate: Date)
