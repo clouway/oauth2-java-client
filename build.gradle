@@ -2,13 +2,73 @@ group 'com.clouway'
 version '1.0'
 
 apply plugin: 'java'
+apply plugin: 'com.bmuschko.nexus'
 
 sourceCompatibility = 1.8
 
-repositories {
-    mavenCentral()
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
+  }
 }
 
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+repositories {
+  mavenCentral()
+}
+
+allprojects {
+  apply plugin: 'java'
+  apply plugin: 'com.bmuschko.nexus'
+
+  sourceCompatibility = 1.7
+  targetCompatibility = 1.7
+
+  group = 'com.clouway.security'
+  version = '0.0.2'
+
+  modifyPom {
+    project {
+      name 'oauth2-java-client'
+      description 'OAuth2 Java Client'
+      url 'https://github.com/clouway/oauth2-java-client'
+      inceptionYear '2018'
+
+      scm {
+        url 'https://github.com/clouway/oauth2-java-client'
+        connection 'scm:https://clouway@github.com/clouway/oauth2-java-client.git'
+        developerConnection 'scm:git://github.com/clouway/oauth2-java-client.git'
+      }
+
+      licenses {
+        license {
+          name 'The Apache Software License, Version 2.0'
+          url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          distribution 'repo'
+        }
+      }
+
+      developers {
+        developer {
+          id 'telcong'
+          name 'Telcong Bot'
+          email 'telcong@clouway.com'
+        }
+      }
+    }
+  }
+
+  extraArchive {
+    sources = true
+    tests = false
+    javadoc = true
+  }
+
+  nexus {
+    sign = true
+    repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+    snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots'
+  }
 }
