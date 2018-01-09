@@ -18,6 +18,13 @@ apply plugin: 'kotlin'
 
 sourceCompatibility = 1.8
 
+javadoc {
+  failOnError = false
+  classpath = configurations.compile + configurations.providedCompile
+}
+
+description = 'oauth2-java-client-console'
+
 repositories {
   mavenCentral()
 }
