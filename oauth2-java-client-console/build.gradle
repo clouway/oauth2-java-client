@@ -15,13 +15,9 @@ apply plugin: 'kotlin'
 
 sourceCompatibility = 1.8
 
-configurations {
-  providedCompile
-}
-
 javadoc {
   failOnError = false
-  classpath = configurations.compile + configurations.providedCompile
+  classpath = configurations.compile
 }
 
 description = 'oauth2-java-client-console'
@@ -33,29 +29,19 @@ repositories {
 dependencies {
   compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-  providedCompile 'org.eclipse.jetty:jetty-webapp:9.3.14.v20161028'
-  providedCompile 'org.eclipse.jetty:jetty-server:9.3.14.v20161028'
+  compile 'org.eclipse.jetty:jetty-webapp:9.3.14.v20161028'
+  compile 'org.eclipse.jetty:jetty-server:9.3.14.v20161028'
 
-  providedCompile 'com.google.guava:guava:18.0'
+  compile 'com.google.guava:guava:18.0'
 
-  providedCompile 'com.google.http-client:google-http-client:1.22.0'
-  providedCompile 'com.google.http-client:google-http-client-gson:1.22.0'
-  providedCompile 'com.google.http-client:google-http-client-appengine:1.22.0'
+  compile 'com.google.http-client:google-http-client:1.22.0'
+  compile 'com.google.http-client:google-http-client-gson:1.22.0'
+  compile 'com.google.http-client:google-http-client-appengine:1.22.0'
 
-  providedCompile 'com.google.http-client:google-http-client:1.23.0'
-  providedCompile 'com.google.oauth-client:google-oauth-client:1.23.0'
+  compile 'com.google.http-client:google-http-client:1.23.0'
+  compile 'com.google.oauth-client:google-oauth-client:1.23.0'
 
   testCompile group: 'junit', name: 'junit', version: '4.12'
   testCompile 'org.jmock:jmock-junit4:2.6.0'
   testCompile 'com.github.rest-driver:rest-client-driver:1.1.45'
 }
-
-jar {
-  from {
-    configurations.providedCompile.collect { it.isDirectory() ? it : zipTree(it) }
-  }
-}
-
-sourceSets.main.compileClasspath += configurations.providedCompile
-sourceSets.test.compileClasspath += configurations.providedCompile
-sourceSets.test.runtimeClasspath += configurations.providedCompile
